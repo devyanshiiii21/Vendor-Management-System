@@ -1,4 +1,3 @@
-from django.shortcuts import render
 from .serializers import VendorSerializer
 from .models import Vendor
 from rest_framework.views import APIView
@@ -12,9 +11,8 @@ class VendorAPIView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self,request):
-        data = request.data
         
-        serializer = VendorSerializer(data=data)
+        serializer = VendorSerializer(data=request.data)
 
         if serializer.is_valid():
             serializer.save()
@@ -26,5 +24,5 @@ class VendorAPIView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 
-    
+
 
