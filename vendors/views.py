@@ -56,8 +56,16 @@ class VendorUpdateDeleteRetrieveAPIView(APIView):
 
 class PurchaseOrderAPIView(APIView):
     def get(self, request):
-        order = PurchaseOrder.objects.all()
-        serializer = PurchaseOrderSerializer(order, many = True)
+        vendor_id = request.query_params.get('vendor_id')
+        
+        if vendor_id:
+            # Filters out purchase orders by vendor ID
+            orders = PurchaseOrder.objects.filter(vendor_id=vendor_id)
+        else:
+            # If vendor ID is not provided, retrieving all purchase orders
+            orders = PurchaseOrder.objects.all()
+
+        serializer = PurchaseOrderSerializer(orders, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
     def post(self, request):
