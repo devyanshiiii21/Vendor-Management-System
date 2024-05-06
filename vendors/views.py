@@ -4,6 +4,9 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.exceptions import NotFound
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
+from django.utils import timezone
 
 class VendorAPIView(APIView):
     def get(self, request):
@@ -108,3 +111,37 @@ class PurchaseOrderRetrieveUpdateDeleteAPIView(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+class VendorHistoricalPerformanceAPIView(APIView):
+    def get(self, request, vendor_id):
+        vendor = get_object_or_404(Vendor, pk=vendor_id)
+        
+        # Retrieval of historical performance data for the vendor
+        historical_data = HistoricalPerformance.objects.filter(vendor=vendor)
+        
+        serialized_data = []
+        for record in historical_data:
+            serialized_record = {
+                'date': record.date,
+                'on_time_delivery_rate': record.on_time_delivery_rate,
+                'quality_rating_avg': record.quality_rating_avg,
+                'average_response_time': record.average_response_time,
+                'fulfillment_rate': record.fulfillment_rate,
+            }
+            serialized_data.append(serialized_record)
+        
+        return JsonResponse(serialized_data, safe=False)
+    
+
+class AcknowledgePurchaseOrderAPIView(APIView):
+    def post(self, request, po_id):
+        purchase_order = get_object_or_404(PurchaseOrder, pk=po_id)
+        
+        # Check if the Purchase Order is already acknowledged
+        if purchase_order.acknowledgment_date:
+            return Response({'error': 'Purchase Order already acknowledged'}, status=400)
+        
+        # Acknowledge the Purchase Order and update acknowledgment_date
+        purchase_order.acknowledgment_date = timezone.now()
+        purchase_order.save()
+        
+        return Response({'message': 'Purchase Order acknowledged successfully'}, status=200)

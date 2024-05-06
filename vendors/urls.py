@@ -1,6 +1,7 @@
 from .views import (
     VendorAPIView, VendorUpdateDeleteRetrieveAPIView,
-    PurchaseOrderAPIView, PurchaseOrderRetrieveUpdateDeleteAPIView
+    PurchaseOrderAPIView, PurchaseOrderRetrieveUpdateDeleteAPIView,
+    VendorHistoricalPerformanceAPIView, AcknowledgePurchaseOrderAPIView
     ) 
 from django.urls import path
 
@@ -10,4 +11,7 @@ urlpatterns = [
 
     path('purchase_orders/', PurchaseOrderAPIView.as_view(), name = 'purchase-orders'),
     path('purchase_orders/<int:po_id>/', PurchaseOrderRetrieveUpdateDeleteAPIView.as_view(), name='purchase-orders-update-delete-retrieve'),
+
+    path('api/vendors/<int:vendor_id>/historical-performance', VendorHistoricalPerformanceAPIView.as_view()),
+    path('api/purchase_orders/<int:po_id>/acknowledge', AcknowledgePurchaseOrderAPIView.as_view()),
 ]
