@@ -1,4 +1,4 @@
-from .serializers import VendorSerializer, PurchaseOrderSerializer, HistoricalPerformanceSerializer
+from .serializers import VendorSerializer, PurchaseOrderSerializer, VendorSignupSerializer
 from .models import Vendor, PurchaseOrder, HistoricalPerformance
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -7,6 +7,62 @@ from rest_framework.exceptions import NotFound
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from rest_framework.permissions import AllowAny
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.authentication import JWTAuthentication
+from django.contrib.auth import authenticate
+
+class VendorSignupAPIView(APIView):
+    permission_classes = [AllowAny]
+    authentication_classes = [JWTAuthentication]
+
+    def post(self, request):
+        data = request.data
+        serializer = VendorSignupSerializer(data=data)
+
+        if serializer.is_valid():
+            user = serializer.save()
+            refresh = RefreshToken.for_user(user)
+            tokens = {
+                'refresh': str(refresh),
+                'access': str(refresh.access_token),
+            }
+            serialized_user = VendorSignupSerializer(user)
+            return Response({
+                'tokens': tokens,
+                'message': 'Your account has been created successfully!',
+                'user': serialized_user.data
+            }, status=status.HTTP_201_CREATED)
+        
+        return Response({
+            'data': serializer.errors,
+            'message': 'Account not created!'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+class LoginAPIView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        username = request.data.get('username')
+        password = request.data.get('password')
+
+        if not (username and password):
+            return Response({'error': 'Username and password are required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = authenticate(request, username=username, password=password)
+        if user:
+            refresh = RefreshToken.for_user(user)
+            access_token = str(refresh.access_token)
+            user_serializer = VendorSignupSerializer(user)
+            return Response({
+                'access': access_token,
+                'refresh': str(refresh),
+                'message': 'Login successful',
+                'username': user_serializer.data['username'],
+            }, status=status.HTTP_200_OK)
+        else:
+            return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
+
 
 class VendorAPIView(APIView):
     def get(self, request):
